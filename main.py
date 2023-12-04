@@ -20,29 +20,43 @@ def main():
     # https://pillow.readthedocs.io/en/latest/reference/ImageDraw.html#PIL.ImageDraw.Draw
     draw = ImageDraw.Draw(image)
 
-    # Draw 10 random colored lines.
-    for _ in range(10):
-        # random.randrange(end) returns a random integer from the
-        # range from 0 to end-1.  In other words, it is the range [0,
-        # end) inclusive of 0 and exclusive of end.
-        #
-        # random.randrange is documented here:
-        # https://docs.python.org/3/library/random.html#random.randrange
-        startx = random.randrange(width)
-        starty = random.randrange(height)
-        endx = random.randrange(width)
-        endy = random.randrange(height)
+    # Set the (terrain) color to green.
+    color = (0, 255, 0)
 
-        r = random.randrange(255)
-        g = random.randrange(255)
-        b = random.randrange(255)
+    # We specify coordinates for lines on the unit scale from [0.0,
+    # 1.0].  This helper function scales lines on the unit scale to
+    # the width x height scale of the image.
+    def scale_line(line):
+        # Subtract height coordinates from 1.0 because unit
+        # coordinates have the origin (0, 0) in the lower-left, but
+        # PIL images have the origin in the upper-right.
+        return [width*line[0], height*(1.0 - line[1]), width*line[2], height*(1.0 - line[3])]
 
-        color = (r, g, b)
+    # Points for the terrain.  Initially empty.  We will laod them
+    # from a file.
+    heights = []
 
-        # ImageDraw.draw is documented here:
-        # https://pillow.readthedocs.io/en/latest/reference/ImageDraw.html#PIL.ImageDraw.ImageDraw.line
-        draw.line([startx, starty, endx, endy], fill=color, width=2)
+    # Open the file 'heights.txt'
+    with open('heights.txt', 'r') as f:
+        # For each line
+        for line in f:
+            # Strip any leading or, more importantly, trailing white
+            # space (e.g. a newline character)
+            line = line.strip()
+            # If the line is not empty
+            if line:
+                # Convert it to a float and add it to the list of heights
+                heights.append(float(line))
         
+    N = len(heights)
+    # For each point, not including the last one
+    for i in range(N - 1):
+        # Draw a line from this point to the next one.  The
+        # x-coordinates are equally spaced.
+        draw.line(scale_line([i / N, heights[i],
+                              (i + 1) / N, heights[i + 1]]),
+                  fill=color, width=2)
+
     # Save the image to a file.
     image.save('output.png')
 
